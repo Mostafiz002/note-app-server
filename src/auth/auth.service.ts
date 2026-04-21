@@ -1,11 +1,13 @@
 import { UserService } from './../user/user.service';
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto';
 import bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
@@ -26,6 +28,8 @@ export class AuthService {
       ...registerDto,
       password: hashedPassword,
     });
+
+    this.logger.log(`New user has been created: ${newUser.id}`);
 
     const payload = { sub: newUser.id, username: newUser.name };
     return {
