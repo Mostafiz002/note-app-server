@@ -15,15 +15,89 @@ model User {
   password  String
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
-  Note      Note[]
+  notes     Note[]
+  tags      Tag[]
+  folders   Folder[]
+}
+
+enum NoteContentType {
+  MARKDOWN
+  JSON
 }
 
 model Note {
-  id    Int     @default(autoincrement()) @id
-  title  String
-  body String  
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
-  user User @relation(fields: [userId], references: [id])
-  userId Int
+  id             Int             @default(autoincrement()) @id
+  title          String
+  body           String?
+  contentType    NoteContentType @default(MARKDOWN)
+  markdownContent String?
+  jsonContent    Json?
+  archivedAt     DateTime?
+  deletedAt      DateTime?
+  updatedAt      DateTime        @updatedAt
+  createdAt      DateTime        @default(now())
+  user           User            @relation(fields: [userId], references: [id])
+  userId         Int
+  noteTags       NoteTag[]
+  outgoingLinks  NoteLink[]       @relation("OutgoingLinks")
+  incomingLinks  NoteLink[]       @relation("IncomingLinks")
+  folderId       Int?
+  folder         Folder?         @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, archivedAt])
+  @@index([userId, deletedAt])
+  @@index([folderId])
+}
+
+model NoteLink {
+  sourceNoteId  Int
+  targetNoteId  Int
+  createdAt     DateTime @default(now())
+  sourceNote    Note     @relation("OutgoingLinks", fields: [sourceNoteId], references: [id], onDelete: Cascade)
+  targetNote    Note     @relation("IncomingLinks", fields: [targetNoteId], references: [id], onDelete: Cascade)
+
+  @@id([sourceNoteId, targetNoteId])
+  @@index([targetNoteId])
+}
+
+model Folder {
+  id         Int       @id @default(autoincrement())
+  name       String
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id])
+  parentId   Int?
+  parent     Folder?   @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children   Folder[]  @relation("FolderHierarchy")
+  notes      Note[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([userId, parentId])
+  @@index([parentId])
+}
+
+model Tag {
+  id        Int       @id @default(autoincrement())
+  name      String
+  color     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id])
+  noteTags  NoteTag[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model NoteTag {
+  noteId     Int
+  tagId      Int
+  createdAt  DateTime @default(now())
+  note       Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, tagId])
+  @@index([tagId])
 }

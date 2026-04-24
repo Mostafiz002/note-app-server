@@ -5,6 +5,9 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { NoteModule } from './note/note.module';
+import { TagModule } from './tag/tag.module';
+import { FolderModule } from './folder/folder.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -12,6 +15,9 @@ import { NoteModule } from './note/note.module';
     AuthModule,
     UserModule,
     NoteModule,
+    TagModule,
+    FolderModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
