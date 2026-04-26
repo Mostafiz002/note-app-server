@@ -1,190 +1,206 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Check, FolderPlus, Folder as FolderIcon, Loader2, PencilLine } from "lucide-react"
+import * as React from "react";
+import { Check, FolderPlus, Folder as FolderIcon, Loader2, PencilLine, Sparkles } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { useFolders, type Folder } from "@/hooks/useFolders"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useFolders, type Folder } from "@/hooks/useFolders";
+import { cn } from "@/lib/utils";
 
 function renderTree(args: {
-  nodes: Folder[]
-  depth?: number
-  selectedId: number | null
-  onSelect: (id: number) => void
-  renamingId: number | null
-  renameValue: string
-  setRenameValue: (v: string) => void
-  startRename: (folder: Folder) => void
-  commitRename: () => void
+  nodes: Folder[];
+  depth?: number;
+  selectedId: number | null;
+  onSelect: (id: number) => void;
+  renamingId: number | null;
+  renameValue: string;
+  setRenameValue: (v: string) => void;
+  startRename: (folder: Folder) => void;
+  commitRename: () => void;
 }): React.ReactNode {
-  const depth = args.depth ?? 0
+  const depth = args.depth ?? 0;
   return args.nodes.map((f) => (
     <div key={f.id}>
       <div
         role="button"
         onClick={() => args.onSelect(f.id)}
         className={cn(
-          "group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted/40",
+          "group flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-all duration-200",
           "cursor-pointer",
-          args.selectedId === f.id ? "bg-primary/10" : ""
+          args.selectedId === f.id 
+            ? "bg-secondary shadow-sm text-foreground" 
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
         )}
-        style={{ paddingLeft: 8 + depth * 12 }}
+        style={{ paddingLeft: 12 + depth * 12 }}
       >
-        <FolderIcon className="size-4 text-muted-foreground" />
+        <FolderIcon className={cn(
+          "size-4 shrink-0 transition-colors",
+          args.selectedId === f.id ? "text-primary" : "text-muted-foreground/50"
+        )} />
+        
         {args.renamingId === f.id ? (
-          <span className="flex min-w-0 flex-1 items-center gap-1">
+          <div className="flex min-w-0 flex-1 items-center gap-1">
             <Input
               value={args.renameValue}
               onChange={(e) => args.setRenameValue(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") args.commitRename()
-                if (e.key === "Escape") args.startRename({ ...f, name: "" })
+                if (e.key === "Enter") args.commitRename();
+                if (e.key === "Escape") args.startRename({ ...f, name: "" });
               }}
-              className="h-7 flex-1"
+              className="h-7 flex-1 bg-background text-xs"
               autoFocus
             />
             <Button
               type="button"
-              size="icon-sm"
+              size="icon"
               variant="ghost"
-              className="cursor-pointer"
+              className="size-7 shrink-0 text-primary hover:bg-primary/10"
               onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                args.commitRename()
+                e.preventDefault();
+                e.stopPropagation();
+                args.commitRename();
               }}
-              aria-label="Save folder name"
             >
-              <Check className="size-4" />
+              <Check className="size-3.5" />
             </Button>
-          </span>
+          </div>
         ) : (
           <>
-            <span className="min-w-0 flex-1 truncate">{f.name}</span>
+            <span className="min-w-0 flex-1 text-[13px] truncate font-medium">{f.name}</span>
             <span className="opacity-0 transition-opacity group-hover:opacity-100">
               <Button
                 type="button"
-                size="icon-sm"
+                size="icon"
                 variant="ghost"
-                className="cursor-pointer"
+                className="size-7 hover:bg-background shadow-sm"
                 onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  args.startRename(f)
+                  e.preventDefault();
+                  e.stopPropagation();
+                  args.startRename(f);
                 }}
-                aria-label="Rename folder"
               >
-                <PencilLine className="size-4" />
+                <PencilLine className="size-3.5 text-muted-foreground" />
               </Button>
             </span>
           </>
         )}
       </div>
     </div>
-  ))
+  ));
 }
 
 export function FoldersPanel() {
-  const folders = useFolders()
-  const [name, setName] = React.useState("")
-  const [renamingId, setRenamingId] = React.useState<number | null>(null)
-  const [renameValue, setRenameValue] = React.useState("")
+  const folders = useFolders();
+  const [name, setName] = React.useState("");
+  const [renamingId, setRenamingId] = React.useState<number | null>(null);
+  const [renameValue, setRenameValue] = React.useState("");
 
   const startRename = React.useCallback((folder: Folder) => {
     if (!folder.name) {
-      setRenamingId(null)
-      setRenameValue("")
-      return
+      setRenamingId(null);
+      setRenameValue("");
+      return;
     }
-    setRenamingId(folder.id)
-    setRenameValue(folder.name)
-  }, [])
+    setRenamingId(folder.id);
+    setRenameValue(folder.name);
+  }, []);
 
   const commitRename = React.useCallback(() => {
-    const id = renamingId
-    const v = renameValue.trim()
+    const id = renamingId;
+    const v = renameValue.trim();
     if (!id || !v) {
-      setRenamingId(null)
-      return
+      setRenamingId(null);
+      return;
     }
-    void folders.rename({ id, name: v })
-    setRenamingId(null)
-  }, [folders, renamingId, renameValue])
+    void folders.rename({ id, name: v });
+    setRenamingId(null);
+  }, [folders, renamingId, renameValue]);
 
   const createRoot = React.useCallback(() => {
-    const v = name.trim()
-    if (!v) return
-    void folders.create({ name: v })
-    setName("")
-  }, [folders, name])
+    const v = name.trim();
+    if (!v) return;
+    void folders.create({ name: v });
+    setName("");
+  }, [folders, name]);
 
   return (
-    <div className="flex h-full flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Folders
+    <div className="flex h-full flex-col gap-4">
+      {/* Header with Tracking and Primary Accents */}
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+          <div className="size-1.5 rounded-full bg-primary animate-pulse" />
+          <div className="text-[12px] font-semibold  text-primary/70">
+            Folders
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="cursor-pointer"
-            onClick={createRoot}
-            aria-label="Create root folder"
-            disabled={folders.loading || !name.trim()}
-          >
-            <FolderPlus className="size-4" />
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-7 text-muted-foreground hover:text-primary transition-colors"
+          onClick={createRoot}
+          disabled={folders.loading || !name.trim()}
+        >
+          <FolderPlus className="size-4" />
+        </Button>
       </div>
 
-      <div className="flex items-center gap-2">
+      {/* Input Section - Matched to Workspace Search Style */}
+      <div className="relative group">
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="New folder…"
-          className="h-8"
+          placeholder="New folder name..."
+          className="h-9 border-none bg-muted/40 pl-3 text-xs focus-visible:ring-1 focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground/30"
           onKeyDown={(e) => {
-            if (e.key !== "Enter") return
-            e.preventDefault()
-            createRoot()
+            if (e.key !== "Enter") return;
+            e.preventDefault();
+            createRoot();
           }}
         />
       </div>
 
-      {folders.error ? (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+      {folders.error && (
+        <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-[11px] text-destructive animate-in fade-in slide-in-from-top-1">
           {folders.error}
         </div>
-      ) : null}
+      )}
 
-      <div className="flex-1 overflow-auto rounded-xl border bg-background/30 p-2">
-        {folders.loading ? (
-          <div className="flex items-center gap-2 p-2 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" />
-            Loading…
-          </div>
-        ) : folders.folders.length ? (
-          <div className="grid gap-0.5">
-            {renderTree({
-              nodes: folders.folders.filter((f) => f.parentId == null),
-              selectedId: folders.selectedFolderId,
-              onSelect: folders.selectFolder,
-              renamingId,
-              renameValue,
-              setRenameValue,
-              startRename,
-              commitRename,
-            })}
-          </div>
-        ) : (
-          <div className="p-2 text-sm text-muted-foreground">No folders yet.</div>
-        )}
+      {/* Folders List Container - Matched to AI Panel's Glass-morphism */}
+      <div className="relative flex-1 overflow-auto rounded-xl border border-primary/5 bg-gradient-to-b from-muted/30 to-background/50 p-1.5">
+        {/* Sublte inner glow */}
+        <div className="absolute inset-0 -z-10 bg-grid-white/[0.02]" />
+        
+        <div className="h-full rounded-[10px] bg-background/40 backdrop-blur-sm p-1">
+          {folders.loading ? (
+            <div className="flex flex-col items-center justify-center h-32 gap-3 p-4 text-[11px] font-mono text-muted-foreground/60">
+              <Loader2 className="size-4 animate-spin text-primary" />
+              <span className="uppercase tracking-widest">Syncing_Folders</span>
+            </div>
+          ) : folders.folders.length ? (
+            <div className="grid gap-0.5 ">
+              {renderTree({
+                nodes: folders.folders.filter((f) => f.parentId == null),
+                selectedId: folders.selectedFolderId,
+                onSelect: folders.selectFolder,
+                renamingId,
+                renameValue,
+                setRenameValue,
+                startRename,
+                commitRename,
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-32 p-4 text-center">
+              <FolderIcon className="size-8 text-muted-foreground/10 mb-2" />
+              <div className="text-[11px] text-muted-foreground/40 italic">
+                No structures found.
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
-  )
+  );
 }
-

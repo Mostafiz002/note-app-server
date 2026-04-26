@@ -7,8 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -134,5 +134,31 @@
     box-shadow:
       0 0 0 1px hsl(var(--ring) / 0.18),
       0 0 18px hsl(var(--sidebar-primary) / 0.25);
+    position: relative;
+    overflow: hidden;
+  }
+  .ai-glow::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--primary) / 0.5),
+      hsl(var(--ring) / 0.8),
+      transparent
+    );
+    background-size: 200% 100%;
+    animation: glow-scan 3s linear infinite;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .ai-glow:hover::before, .ai-glow:active::before {
+    opacity: 1;
+  }
+  @keyframes glow-scan {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
   }
 }
