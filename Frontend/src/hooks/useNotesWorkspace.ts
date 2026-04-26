@@ -53,6 +53,10 @@ export function useNotesWorkspace(): WorkspaceState {
 
   const [selectedId, setSelectedId] = React.useState<number | null>(null)
 
+  React.useEffect(() => {
+    setSelectedId(null)
+  }, [selectedFolderId])
+
   const [active, setActive] = React.useState<Note | null>(null)
   const [activeLoading, setActiveLoading] = React.useState(false)
   const [activeError, setActiveError] = React.useState<string | null>(null)
@@ -78,9 +82,6 @@ export function useNotesWorkspace(): WorkspaceState {
 
       const data = await apiFetch<Paginated<Note>>(path, { cache: "no-store" })
       setNotes(data.items)
-      if (!selectedId && data.items[0]?.id) {
-        setSelectedId(data.items[0].id)
-      }
     } catch (err) {
       setNotesError(err instanceof Error ? err.message : "Failed to load notes")
     } finally {

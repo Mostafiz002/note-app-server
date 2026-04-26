@@ -1,22 +1,24 @@
-import type { ReactNode } from "react"
-import Link from "next/link"
-import { LogOut } from "lucide-react"
+import type { ReactNode } from "react";
+import Link from "next/link";
+import { LogOut } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/ThemeToggle"
-import { FoldersPanel } from "@/components/features/sidebar/FoldersPanel"
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { FoldersPanel } from "@/components/features/sidebar/FoldersPanel";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-dvh bg-background">
-      <div className="flex min-h-dvh">
-        <aside className="hidden w-72 border-r bg-sidebar text-sidebar-foreground md:flex md:flex-col">
-          <div className="flex items-center justify-between px-4 py-3">
+    <div className="h-dvh flex flex-col bg-background overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+        <aside className="w-full lg:w-72 border-r bg-sidebar text-sidebar-foreground flex flex-col shrink-0 lg:h-full max-h-[35dvh] lg:max-h-full">
+          <div className="flex items-center justify-between px-4 py-3 shrink-0">
             <Link href="/app" className="text-sm font-semibold tracking-tight">
               Think Note AI
             </Link>
             <div className="flex items-center gap-1">
-              <ThemeToggle />
+              <AnimatedThemeToggler className="cursor-pointer mx-2" />
+
               <form action="/api/auth/logout" method="post">
                 <Button
                   variant="outline"
@@ -30,13 +32,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               </form>
             </div>
           </div>
-          <div className="flex-1 px-4 py-3">
+          <div className="flex-1 px-4 py-3 min-h-0 overflow-auto">
             <FoldersPanel />
           </div>
         </aside>
-        <main className="flex flex-1 flex-col">{children}</main>
+        <main className="flex flex-1 flex-col overflow-hidden min-h-0">{children}</main>
       </div>
     </div>
-  )
+  );
 }
-
