@@ -7,6 +7,8 @@ export type Note = {
   markdownContent: string | null
   jsonContent: unknown | null
   folderId: number | null
+  summary?: string | null
+  keyPoints?: string[] | null
   archivedAt: string | null
   deletedAt: string | null
   createdAt: string

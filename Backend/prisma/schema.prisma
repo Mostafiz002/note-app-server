@@ -44,6 +44,8 @@ model Note {
   contentType    NoteContentType @default(MARKDOWN)
   markdownContent String?
   jsonContent    Json?
+  summary        String?
+  keyPoints      Json?
   archivedAt     DateTime?
   deletedAt      DateTime?
   updatedAt      DateTime        @updatedAt

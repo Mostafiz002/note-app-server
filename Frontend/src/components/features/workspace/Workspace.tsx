@@ -10,6 +10,7 @@ import {
   Search,
   Wand2,
   ChevronLeft,
+  FolderInput,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -152,9 +153,11 @@ export function Workspace() {
                   Auto_Save Active
                 </div>
               )}
-              <label className="flex items-center gap-2 rounded-md border bg-muted/30 px-2 py-1 text-[11px]">
+              <label className="flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1 text-[11px] group hover:bg-muted/50 transition-colors">
+                <FolderInput className="size-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <span className="text-muted-foreground font-medium hidden sm:inline-block">Move to</span>
                 <select
-                  className="bg-transparent font-medium outline-none cursor-pointer"
+                  className="dark:bg-black font-medium outline-none cursor-pointer text-foreground"
                   value={ws.active?.folderId ?? ""}
                   onChange={(e) => void ws.moveToFolder(Number(e.target.value))}
                 >
@@ -262,7 +265,7 @@ export function Workspace() {
                         key={btn.id}
                         size="sm"
                         variant="outline"
-                        disabled={ai.running !== null}
+                        disabled={ai.running !== null || !ws.selectedId}
                         onClick={() => void btn.action()}
                         className="relative h-8 gap-2 overflow-hidden border-primary/10 bg-background px-4 text-[11px] font-bold transition-all duration-300 hover:scale-105 hover:border-primary/50 hover:shadow-[0_0_15px_rgba(var(--primary),0.2)]"
                       >
@@ -279,45 +282,49 @@ export function Workspace() {
                   </div>
                 </div>
 
-                {(ai.summary || ai.keyPoints?.length || ai.error) && (
-                  <div className="mt-2 space-y-2 p-3 animate-in slide-in-from-top-2 duration-300">
-                    {ai.error && (
-                      <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs text-destructive">
-                        {ai.error}
-                      </div>
-                    )}
-                    {ai.summary && (
-                      <div className="rounded-xl border border-primary/5 bg-primary/5 p-4 text-[13px] leading-relaxed text-foreground/80 shadow-inner group/summary">
-                        <div className="mb-2 text-[10px] font-bold uppercase tracking-tighter text-primary/60 flex items-center gap-2">
-                          <div className="h-px flex-1 bg-primary/10" /> Summary
+                {(() => {
+                  const currentSummary = ai.summary || ws.active?.summary;
+                  const currentKeyPoints = ai.keyPoints || (ws.active?.keyPoints as string[]);
+                  const hasData = currentSummary || (currentKeyPoints && currentKeyPoints.length > 0) || ai.error;
+                  if (!hasData) return null;
+
+                  return (
+                    <div className="mt-2 space-y-2 p-3 animate-in slide-in-from-top-2 duration-300">
+                      {ai.error && (
+                        <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                          {ai.error}
                         </div>
-                        {ai.summary}
-                      </div>
-                    )}
-                    {ai.keyPoints && ai.keyPoints.length > 0 && (
-                      <div className="rounded-xl border border-primary/5 bg-primary/5 p-4 text-[13px] leading-relaxed shadow-inner">
-                        <div className="mb-2 text-[10px] font-bold uppercase tracking-tighter text-primary/60 flex items-center gap-2">
-                          <div className="h-px flex-1 bg-primary/10" /> Key
-                          Insights
+                      )}
+                      {currentSummary && (
+                        <div className="rounded-xl border border-primary/5 bg-primary/5 p-4 text-[13px] leading-relaxed text-foreground/80 shadow-inner group/summary">
+                          <div className="mb-2 text-[10px] font-bold uppercase tracking-tighter text-primary/60 flex items-center gap-2">
+                            <div className="h-px flex-1 bg-primary/10" /> Summary
+                          </div>
+                          {currentSummary}
                         </div>
-                        <ul className="space-y-1.5">
-                          {ai.keyPoints.map((kp, i) => (
-                            <li key={i} className="flex gap-2">
-                              <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary/40 shadow-[0_0_5px_rgba(var(--primary),0.5)]" />
-                              <span className="text-muted-foreground">
-                                {kp}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
+                      {currentKeyPoints && currentKeyPoints.length > 0 && (
+                        <div className="rounded-xl border border-primary/5 bg-primary/5 p-4 text-[13px] leading-relaxed shadow-inner">
+                          <div className="mb-2 text-[10px] font-bold uppercase tracking-tighter text-primary/60 flex items-center gap-2">
+                            <div className="h-px flex-1 bg-primary/10" /> Key Insights
+                          </div>
+                          <ul className="space-y-1.5">
+                            {currentKeyPoints.map((kp, i) => (
+                              <li key={i} className="flex gap-2">
+                                <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary/40 shadow-[0_0_5px_rgba(var(--primary),0.5)]" />
+                                <span className="text-muted-foreground">{kp}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               <Textarea
-                value={ws.draftMarkdown}
+                value={ws.draftMarkdown ?? ""}
                 onChange={(e) => ws.setDraftMarkdown(e.target.value)}
                 placeholder="Start writing..."
                 className="min-h-[500px] dark:text-[#bbbbb9] w-full resize-none border-none bg-transparent p-0 text-base leading-relaxed shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/20"

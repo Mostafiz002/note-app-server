@@ -43,10 +43,19 @@ export class AuthService {
       password: hashedPassword,
     });
 
-    await this.prismaService.folder.create({
+    const folder = await this.prismaService.folder.create({
       data: {
         name: 'General',
         userId: newUser.id,
+      },
+    });
+
+    await this.prismaService.note.create({
+      data: {
+        title: 'Getting Started',
+        markdownContent: '# Welcome to Think Note AI!\n\nThis is your first note. You can edit it, delete it, or create new ones using the sidebar.\n\nEnjoy using Think Note AI!',
+        userId: newUser.id,
+        folderId: folder.id,
       },
     });
 

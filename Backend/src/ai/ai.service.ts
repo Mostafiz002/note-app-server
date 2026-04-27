@@ -23,9 +23,17 @@ export class AiService {
     const result = await this.geminiProvider.generateJson<AiOutput>(prompt);
     console.log("AI RESULT:", result);
 
+    const summary = result.summary ?? '';
+    if (summary) {
+      await this.prismaService.note.update({
+        where: { id: note.id },
+        data: { summary },
+      });
+    }
+
     return {
       noteId: note.id,
-      summary: result.summary ?? '',
+      summary,
     };
   }
 
@@ -43,7 +51,7 @@ export class AiService {
   async generateTitle(dto: AiNoteRequestDto, userId: number) {
     const note = await this.getOwnedNote(dto.noteId, userId);
     const prompt = this.buildPrompt(
-      'generate_title',
+      'generate_short_title',
       note.title,
       this.getContent(note),
       dto.instruction,
@@ -66,9 +74,17 @@ export class AiService {
     );
     const result = await this.geminiProvider.generateJson<AiOutput>(prompt);
 
+    const keyPoints = result.keyPoints ?? [];
+    if (keyPoints.length > 0) {
+      await this.prismaService.note.update({
+        where: { id: note.id },
+        data: { keyPoints },
+      });
+    }
+
     return {
       noteId: note.id,
-      keyPoints: result.keyPoints ?? [],
+      keyPoints,
     };
   }
 
@@ -79,7 +95,7 @@ export class AiService {
   }
 
   private buildPrompt(
-    task: 'summarize' | 'rewrite' | 'generate_title' | 'extract_key_points',
+    task: 'summarize' | 'rewrite' | 'generate_short_title' | 'extract_key_points',
     title: string,
     content: string,
     instruction?: string,

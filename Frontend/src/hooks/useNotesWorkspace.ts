@@ -46,6 +46,7 @@ function useDebouncedEffect(effect: () => void, ms: number, deps: React.Dependen
 export function useNotesWorkspace(): WorkspaceState {
   const [q, setQ] = React.useState("")
   const selectedFolderId = useWorkspaceStore((s) => s.selectedFolderId)
+  const initialLoad = React.useRef(true)
 
   const [notes, setNotes] = React.useState<Note[]>([])
   const [notesLoading, setNotesLoading] = React.useState(true)
@@ -82,6 +83,13 @@ export function useNotesWorkspace(): WorkspaceState {
 
       const data = await apiFetch<Paginated<Note>>(path, { cache: "no-store" })
       setNotes(data.items)
+      
+      if (initialLoad.current) {
+        initialLoad.current = false
+        if (!selectedId && data.items[0]?.id) {
+          setSelectedId(data.items[0].id)
+        }
+      }
     } catch (err) {
       setNotesError(err instanceof Error ? err.message : "Failed to load notes")
     } finally {
