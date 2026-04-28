@@ -88,7 +88,7 @@ function renderTree(args: {
                 type="button"
                 size="icon"
                 variant="ghost"
-                className="size-7 hover:bg-destructive/10 text-destructive shadow-sm cursor-pointer"
+                className="size-7 hover:bg-destructive/10 hover:text-destructive shadow-sm cursor-pointer"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();

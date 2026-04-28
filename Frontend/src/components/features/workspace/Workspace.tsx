@@ -12,7 +12,14 @@ import {
   ChevronLeft,
   FolderInput,
   Trash2,
+  MoreVertical,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -122,12 +129,15 @@ export function Workspace() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        toast.warning("Are you sure you want to delete this note?", {
-                          action: {
-                            label: "Delete",
-                            onClick: () => void ws.removeNote(n.id),
+                        toast.warning(
+                          "Are you sure you want to delete this note?",
+                          {
+                            action: {
+                              label: "Delete",
+                              onClick: () => void ws.removeNote(n.id),
+                            },
                           },
-                        });
+                        );
                       }}
                     >
                       <Trash2 className="size-3.5" />
@@ -166,42 +176,94 @@ export function Workspace() {
             </div>
 
             <div className="flex items-center gap-3">
-              {ws.saving ? (
-                <div className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground">
-                  <Loader2 className="size-3 animate-spin" /> Saving
-                </div>
-              ) : (
-                <div className="text-[10px] font-mono flex  gap-1.75 items-center text-muted-foreground/40  uppercase tracking-tighter ">
-                  <div className="size-1.5 rounded-full bg-primary animate-pulse" />
-                  Auto_Save Active
-                </div>
-              )}
-              <label className="flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1 text-[11px] group hover:bg-muted/50 transition-colors">
-                <FolderInput className="size-3 text-muted-foreground group-hover:text-foreground transition-colors" />
-                <span className="text-muted-foreground font-medium hidden sm:inline-block">
-                  Move to
-                </span>
-                <select
-                  className="dark:bg-black font-medium outline-none cursor-pointer text-foreground"
-                  value={ws.active?.folderId ?? ""}
-                  onChange={(e) => void ws.moveToFolder(Number(e.target.value))}
+              {/* DESKTOP VIEW */}
+              <div className="hidden sm:flex items-center gap-3">
+                {ws.saving ? (
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground">
+                    <Loader2 className="size-3 animate-spin" /> Saving
+                  </div>
+                ) : (
+                  <div className="text-[10px] font-mono flex gap-1.75 items-center text-muted-foreground/40 uppercase tracking-tighter">
+                    <div className="size-1.5 rounded-full bg-primary animate-pulse" />
+                    Auto_Save Active
+                  </div>
+                )}
+
+                <label className="flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1 text-[11px] group hover:bg-muted/50 transition-colors">
+                  <FolderInput className="size-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  <span className="text-muted-foreground font-medium">
+                    Move to
+                  </span>
+                  <select
+                    className="dark:bg-black font-medium outline-none cursor-pointer text-foreground bg-transparent"
+                    value={ws.active?.folderId ?? ""}
+                    onChange={(e) =>
+                      void ws.moveToFolder(Number(e.target.value))
+                    }
+                  >
+                    {folderRoots.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-3 text-xs font-semibold shadow-sm cursor-pointer"
+                  onClick={() => void ws.saveNow()}
+                  disabled={!ws.selectedId || ws.activeLoading || ws.saving}
                 >
-                  {folderRoots.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 px-3 text-xs font-semibold shadow-sm cursor-pointer"
-                onClick={() => void ws.saveNow()}
-                disabled={!ws.selectedId || ws.activeLoading || ws.saving}
-              >
-                <Save className="mr-1.5 size-3.5" /> Save
-              </Button>
+                  <Save className="mr-1.5 size-3.5" /> Save
+                </Button>
+              </div>
+
+              {/* MOBILE VIEW */}
+              <div className="sm:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="size-8">
+                      <MoreVertical className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <div className="px-2 py-1.5 text-[10px] font-mono uppercase text-muted-foreground border-b mb-1">
+                      {ws.saving ? "Saving..." : "Auto-save Active"}
+                    </div>
+
+                    {/* Manual Save Item */}
+                    <DropdownMenuItem
+                      onClick={() => void ws.saveNow()}
+                      disabled={!ws.selectedId || ws.activeLoading || ws.saving}
+                      className="text-xs"
+                    >
+                      <Save className="mr-2 size-3.5" /> Save Now
+                    </DropdownMenuItem>
+
+                    {/* Folder Selection inside Menu */}
+                    <div className="px-2 py-2">
+                      <div className="flex items-center gap-2 mb-1 text-[10px] text-muted-foreground">
+                        <FolderInput className="size-3" /> Move to:
+                      </div>
+                      <select
+                        className="w-full text-xs bg-muted/50 rounded p-1 outline-none"
+                        value={ws.active?.folderId ?? ""}
+                        onChange={(e) =>
+                          void ws.moveToFolder(Number(e.target.value))
+                        }
+                      >
+                        {folderRoots.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </header>
 
