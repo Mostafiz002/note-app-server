@@ -1,7 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { Check, FolderPlus, Folder as FolderIcon, Loader2, PencilLine, Sparkles, Trash2 } from "lucide-react";
+import {
+  Check,
+  FolderPlus,
+  Folder as FolderIcon,
+  Loader2,
+  PencilLine,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,17 +38,21 @@ function renderTree(args: {
         className={cn(
           "group flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-all duration-200",
           "",
-          args.selectedId === f.id 
-            ? "bg-secondary shadow-sm text-foreground" 
-            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          args.selectedId === f.id
+            ? "bg-secondary shadow-sm text-foreground"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
         )}
         style={{ paddingLeft: 12 + depth * 12 }}
       >
-        <FolderIcon className={cn(
-          "size-4 shrink-0 transition-colors",
-          args.selectedId === f.id ? "text-primary" : "text-muted-foreground/50"
-        )} />
-        
+        <FolderIcon
+          className={cn(
+            "size-4 shrink-0 transition-colors",
+            args.selectedId === f.id
+              ? "text-primary"
+              : "text-muted-foreground/50",
+          )}
+        />
+
         {args.renamingId === f.id ? (
           <div className="flex min-w-0 flex-1 items-center gap-1">
             <Input
@@ -69,7 +81,9 @@ function renderTree(args: {
           </div>
         ) : (
           <>
-            <span className="min-w-0 flex-1 text-[13px] truncate font-medium">{f.name}</span>
+            <span className="min-w-0 flex-1 text-[13px] truncate font-medium">
+              {f.name}
+            </span>
             <span className="opacity-0 transition-opacity group-hover:opacity-100">
               <Button
                 type="button"
@@ -185,7 +199,7 @@ export function FoldersPanel() {
       {/* Folders List Container */}
       <div className="relative flex-1 overflow-auto rounded-xl border border-primary/5 bg-linear-to-b from-muted/30 to-background/50 p-1.5">
         <div className="absolute inset-0 -z-10 bg-grid-white/[0.02]" />
-        
+
         <div className="h-full rounded-[10px] bg-background/40 backdrop-blur-sm p-1">
           {folders.loading ? (
             <div className="flex flex-col items-center justify-center h-32 gap-3 p-4 text-[11px] font-mono text-muted-foreground/60">
@@ -204,12 +218,15 @@ export function FoldersPanel() {
                 startRename,
                 commitRename,
                 onDelete: (id: number) => {
-                  toast.warning("Are you sure you want to delete this folder?", {
-                    action: {
-                      label: "Delete",
-                      onClick: () => void folders.remove(id),
+                  toast.warning(
+                    "Are you sure you want to delete this folder?",
+                    {
+                      action: {
+                        label: "Delete",
+                        onClick: () => void folders.remove(id),
+                      },
                     },
-                  });
+                  );
                 },
               })}
             </div>

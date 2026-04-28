@@ -1,10 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { apiFetch } from "@/lib/api"
-import type { Note, Paginated } from "@/lib/types"
 import { useWorkspaceStore } from "@/stores/workspace.store"
-import { toast } from "sonner"
+import type { Note } from "@/lib/types"
 
 type WorkspaceState = {
   q: string
@@ -45,233 +43,66 @@ function useDebouncedEffect(effect: () => void, ms: number, deps: React.Dependen
 }
 
 export function useNotesWorkspace(): WorkspaceState {
-  const [q, setQ] = React.useState("")
-  const selectedFolderId = useWorkspaceStore((s) => s.selectedFolderId)
-  const initialLoad = React.useRef(true)
+  const store = useWorkspaceStore()
 
-  const [notes, setNotes] = React.useState<Note[]>([])
-  const [notesLoading, setNotesLoading] = React.useState(true)
-  const [notesError, setNotesError] = React.useState<string | null>(null)
-
-  const [selectedId, setSelectedId] = React.useState<number | null>(null)
-
-  React.useEffect(() => {
-    setSelectedId(null)
-  }, [selectedFolderId])
-
-  const [active, setActive] = React.useState<Note | null>(null)
-  const [activeLoading, setActiveLoading] = React.useState(false)
-  const [activeError, setActiveError] = React.useState<string | null>(null)
-
-  const [draftTitle, setDraftTitle] = React.useState("")
-  const [draftMarkdown, setDraftMarkdown] = React.useState("")
-
-  const [saving, setSaving] = React.useState(false)
-  const [saveError, setSaveError] = React.useState<string | null>(null)
-
-  const refreshList = React.useCallback(async () => {
-    setNotesLoading(true)
-    try {
-      if (!selectedFolderId) {
-        setNotes([])
-        return
-      }
-
-      const path = q.trim()
-        ? `/api/v1/notes/search?q=${encodeURIComponent(q.trim())}&folderId=${selectedFolderId}`
-        : `/api/v1/notes?page=1&limit=50&folderId=${selectedFolderId}`
-
-      const data = await apiFetch<Paginated<Note>>(path, { cache: "no-store" })
-      setNotes(data.items)
-      
-      if (initialLoad.current) {
-        initialLoad.current = false
-        if (!selectedId && data.items[0]?.id) {
-          setSelectedId(data.items[0].id)
-        }
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to load notes"
-      setNotesError(msg)
-      toast.error(msg)
-    } finally {
-      setNotesLoading(false)
-    }
-  }, [q, selectedFolderId, selectedId])
-
-  const select = React.useCallback((id: number) => {
-    setSelectedId(id)
-  }, [])
-
-  React.useEffect(() => {
-    void refreshList()
-  }, [refreshList])
-
-  React.useEffect(() => {
-    if (!selectedId) {
-      setActive(null)
-      setDraftTitle("")
-      setDraftMarkdown("")
-      return
-    }
-
-    let cancelled = false
-    setActiveLoading(true)
-    void (async () => {
-      try {
-        const note = await apiFetch<Note>(`/api/v1/notes/${selectedId}`, {
-          cache: "no-store",
-        })
-        if (cancelled) return
-        setActive(note)
-        setDraftTitle(note.title ?? "")
-        setDraftMarkdown(note.markdownContent ?? "")
-      } catch (err) {
-        if (cancelled) return
-        const msg = err instanceof Error ? err.message : "Failed to load note"
-        setActiveError(msg)
-        toast.error(msg)
-      } finally {
-        if (!cancelled) setActiveLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [selectedId])
-
-  const createNote = React.useCallback(async () => {
-    try {
-      if (!selectedFolderId) {
-        toast.error("Select a folder to create a note.")
-        return
-      }
-
-      const created = await apiFetch<Note>("/api/v1/notes", {
-        method: "POST",
-        body: JSON.stringify({
-          title: "Untitled",
-          contentType: "MARKDOWN",
-          // Backend validation rejects empty markdownContent
-          markdownContent: " ",
-          folderId: selectedFolderId,
-        }),
-      })
-      setNotes((prev) => [created, ...prev])
-      setSelectedId(created.id)
-      toast.success("Note created")
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create note")
-    }
-  }, [selectedFolderId])
-
-  const saveNow = React.useCallback(async () => {
-    if (!selectedId) return
-    setSaving(true)
-    try {
-      const updated = await apiFetch<Note>(`/api/v1/notes/${selectedId}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          title: draftTitle,
-          contentType: "MARKDOWN",
-          markdownContent: draftMarkdown,
-        }),
-      })
-      setActive(updated)
-      setNotes((prev) =>
-        prev.map((n) => (n.id === updated.id ? { ...n, title: updated.title, updatedAt: updated.updatedAt } : n))
-      )
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Failed to save")
-    } finally {
-      setSaving(false)
-    }
-  }, [draftMarkdown, draftTitle, selectedId])
-
-  const moveToFolder = React.useCallback(
-    async (folderId: number) => {
-      if (!selectedId) return
-      try {
-        await apiFetch<unknown>(`/api/v1/notes/${selectedId}/folder`, {
-          method: "PATCH",
-          body: JSON.stringify({ folderId }),
-        })
-        toast.success("Note moved")
-        // if moved out of the current folder filter, refresh list to reflect it
-        await refreshList()
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to move note")
-      }
-    },
-    [refreshList, selectedId]
-  )
-
-  const removeNote = React.useCallback(
-    async (id: number) => {
-      const noteTitle = notes.find(n => n.id === id)?.title || "note"
-      try {
-        await apiFetch<unknown>(`/api/v1/notes/${id}`, {
-          method: "DELETE",
-        })
-        toast.success(`Note "${noteTitle}" deleted`)
-        if (selectedId === id) {
-          setSelectedId(null)
-        }
-        await refreshList()
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to delete note")
-      }
-    },
-    [refreshList, selectedId, notes]
-  )
-
+  // Autosave logic
   const lastSavedRef = React.useRef<{ id: number; title: string; markdown: string } | null>(null)
+  
   React.useEffect(() => {
-    if (!selectedId) return
-    lastSavedRef.current = { id: selectedId, title: draftTitle, markdown: draftMarkdown }
-  }, [selectedId])
+    if (!store.selectedNoteId) return
+    lastSavedRef.current = { 
+      id: store.selectedNoteId, 
+      title: store.draftTitle, 
+      markdown: store.draftMarkdown 
+    }
+  }, [store.selectedNoteId])
 
   useDebouncedEffect(
     () => {
-      if (!selectedId || activeLoading) return
+      if (!store.selectedNoteId || store.activeNoteLoading) return
       const last = lastSavedRef.current
-      if (!last || last.id !== selectedId) return
-      if (last.title === draftTitle && last.markdown === draftMarkdown) return
-      void saveNow()
-      lastSavedRef.current = { id: selectedId, title: draftTitle, markdown: draftMarkdown }
+      if (!last || last.id !== store.selectedNoteId) return
+      if (last.title === store.draftTitle && last.markdown === store.draftMarkdown) return
+      
+      void store.saveActiveNote()
+      lastSavedRef.current = { 
+        id: store.selectedNoteId, 
+        title: store.draftTitle, 
+        markdown: store.draftMarkdown 
+      }
     },
     800,
-    [draftTitle, draftMarkdown, selectedId, activeLoading, saveNow]
+    [store.draftTitle, store.draftMarkdown, store.selectedNoteId, store.activeNoteLoading]
   )
 
   return {
-    q,
-    setQ,
+    q: store.q,
+    setQ: store.setQ,
 
-    notes,
-    notesLoading,
-    notesError,
+    notes: store.notes,
+    notesLoading: store.notesLoading,
+    notesError: null,
 
-    selectedId,
-    select,
+    selectedId: store.selectedNoteId,
+    select: store.setSelectedNoteId,
 
-    active,
-    activeLoading,
-    activeError,
+    active: store.activeNote,
+    activeLoading: store.activeNoteLoading,
+    activeError: null,
 
-    draftTitle,
-    setDraftTitle,
-    draftMarkdown,
-    setDraftMarkdown,
+    draftTitle: store.draftTitle,
+    setDraftTitle: store.setDraftTitle,
+    draftMarkdown: store.draftMarkdown,
+    setDraftMarkdown: store.setDraftMarkdown,
 
-    saving,
-    saveError,
+    saving: false, // Could be derived from a specific state if needed
+    saveError: null,
 
-    refreshList,
-    createNote,
-    saveNow,
-    moveToFolder,
-    removeNote,
+    refreshList: store.refreshNotes,
+    createNote: store.createNote,
+    saveNow: store.saveActiveNote,
+    moveToFolder: store.moveNote,
+    removeNote: store.removeNote,
   }
 }
 
